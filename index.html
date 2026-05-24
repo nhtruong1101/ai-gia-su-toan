@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Gia Sư Toán Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Thư viện KaTeX -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+    
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="background-shapes">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+    </div>
+
+    <!-- API Key Modal (Removed for security, moved to backend) -->
+    <!-- Canvas Modal cho bảng vẽ -->
+    <div id="canvasModal" class="modal hidden">
+        <div class="modal-content glass-panel" style="max-width: 800px; width: 95%;">
+            <h2><i class="fa-solid fa-palette"></i> Bảng Vẽ Nháp</h2>
+            <div class="canvas-tools">
+                <input type="color" id="drawColor" value="#ffffff" title="Chọn màu">
+                <input type="range" id="drawSize" min="1" max="20" value="3" title="Kích thước nét">
+                <button id="eraserBtn" class="btn btn-secondary btn-sm"><i class="fa-solid fa-eraser"></i> Tẩy</button>
+                <button id="clearCanvasBtn" class="btn btn-secondary btn-sm"><i class="fa-solid fa-trash"></i> Xóa hết</button>
+            </div>
+            <canvas id="drawingCanvas" width="700" height="400" style="background: #1e1b4b; border-radius: 8px; cursor: crosshair; width: 100%;"></canvas>
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <button id="saveCanvasBtn" class="btn btn-primary w-100"><i class="fa-solid fa-check"></i> Xong</button>
+                <button id="closeCanvasBtn" class="btn btn-secondary w-100"><i class="fa-solid fa-times"></i> Hủy</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Container chính -->
+    <div id="app" class="app-container">
+        <!-- View: Đăng nhập / Đăng ký -->
+        <div id="authView" class="view active">
+            <div class="auth-panel glass-panel">
+                <div class="auth-header">
+                    <h1><i class="fa-solid fa-square-root-variable"></i> AI Gia Sư Toán Pro</h1>
+                    <p>Đăng nhập để bắt đầu giải toán</p>
+                </div>
+                
+                <div class="auth-tabs">
+                    <button class="tab-btn active" data-tab="login">Đăng nhập</button>
+                    <button class="tab-btn" data-tab="register">Đăng ký</button>
+                </div>
+
+                <form id="loginForm" class="auth-form active">
+                    <div class="input-group">
+                        <i class="fa-solid fa-user"></i>
+                        <input type="text" id="loginUsername" placeholder="Tên đăng nhập" required>
+                    </div>
+                    <div class="input-group">
+                        <i class="fa-solid fa-lock"></i>
+                        <input type="password" id="loginPassword" placeholder="Mật khẩu" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Đăng Nhập</button>
+                    <p id="loginError" class="error-msg"></p>
+                </form>
+
+                <form id="registerForm" class="auth-form hidden">
+                    <div class="input-group">
+                        <i class="fa-solid fa-user"></i>
+                        <input type="text" id="regUsername" placeholder="Tên đăng nhập" required>
+                    </div>
+                    <div class="input-group">
+                        <i class="fa-solid fa-lock"></i>
+                        <input type="password" id="regPassword" placeholder="Mật khẩu" required>
+                    </div>
+                    <div class="input-group">
+                        <i class="fa-solid fa-lock"></i>
+                        <input type="password" id="regPasswordConfirm" placeholder="Xác nhận mật khẩu" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Đăng Ký</button>
+                    <p id="regError" class="error-msg"></p>
+                </form>
+            </div>
+        </div>
+
+        <!-- View: Người dùng (Gia sư toán) -->
+        <div id="userView" class="view hidden layout-with-sidebar">
+            <!-- Sidebar Lịch sử -->
+            <aside class="history-sidebar glass-panel">
+                <h3><i class="fa-solid fa-clock-rotate-left"></i> Lịch Sử</h3>
+                <div id="historyList" class="history-list">
+                    <!-- Danh sách lịch sử hiển thị ở đây -->
+                </div>
+            </aside>
+
+            <!-- Nội dung chính -->
+            <div class="main-content-wrapper">
+                <header class="glass-panel">
+                    <div class="logo">
+                        <i class="fa-solid fa-square-root-variable"></i>
+                        <span>AI Gia Sư Toán Pro</span>
+                    </div>
+                    <div class="user-info">
+                        <span class="badge" id="usageBadge"><i class="fa-solid fa-bolt"></i> Lượt dùng: <span id="usageCount">0</span>/<span id="usageLimit">10</span></span>
+                        <span class="username-display" id="currentUserDisplay">User</span>
+                        <button id="logoutBtnUser" class="btn btn-icon" title="Đăng xuất"><i class="fa-solid fa-sign-out-alt"></i></button>
+                    </div>
+                </header>
+
+                <main class="main-content">
+                    <div class="math-panel glass-panel">
+                        <div class="input-section">
+                            <h2>Nhập đề bài</h2>
+                            <div class="select-class">
+                                <label for="classSelect">Chọn lớp:</label>
+                                <select id="classSelect">
+                                    <option value="Lớp 1">Lớp 1</option><option value="Lớp 2">Lớp 2</option><option value="Lớp 3">Lớp 3</option>
+                                    <option value="Lớp 4">Lớp 4</option><option value="Lớp 5">Lớp 5</option><option value="Lớp 6">Lớp 6</option>
+                                    <option value="Lớp 7">Lớp 7</option><option value="Lớp 8">Lớp 8</option><option value="Lớp 9">Lớp 9</option>
+                                    <option value="Lớp 10">Lớp 10</option><option value="Lớp 11">Lớp 11</option><option value="Lớp 12" selected>Lớp 12</option>
+                                </select>
+                            </div>
+                            
+                            <div class="textarea-wrapper" style="position:relative;">
+                                <textarea id="mathProblem" placeholder="Gõ đề bài hoặc bấm nút Micro..." rows="4"></textarea>
+                                <button id="micBtn" class="btn-icon absolute-btn" title="Đọc đề bài" style="position:absolute; bottom:10px; right:10px; z-index:10;"><i class="fa-solid fa-microphone"></i></button>
+                            </div>
+                            
+                            <div class="action-buttons" style="display: flex; gap: 10px;">
+                                <button id="openCanvasBtn" class="btn btn-secondary w-100"><i class="fa-solid fa-pen"></i> Bảng Vẽ</button>
+                                <label for="imageUpload" class="btn btn-secondary w-100" style="text-align: center; margin:0;">
+                                    <i class="fa-solid fa-image"></i> Tải ảnh
+                                </label>
+                                <input type="file" id="imageUpload" accept="image/png, image/jpeg, image/webp" class="hidden">
+                            </div>
+
+                            <div id="imagePreviewContainer" class="hidden">
+                                <img id="imagePreview" src="" alt="Preview">
+                                <button id="removeImageBtn" class="btn btn-icon"><i class="fa-solid fa-times-circle"></i></button>
+                            </div>
+
+                            <button id="solveBtn" class="btn btn-primary"><i class="fa-solid fa-wand-magic-sparkles"></i> Giải Bài</button>
+                            <p id="mathError" class="error-msg"></p>
+                        </div>
+
+                        <div class="result-section">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <h2>Lời giải:</h2>
+                                <div class="result-tools hidden" id="resultTools">
+                                    <button id="speakBtn" class="btn btn-secondary btn-sm" title="Nghe AI đọc"><i class="fa-solid fa-volume-high"></i></button>
+                                    <button id="exportPdfBtn" class="btn btn-secondary btn-sm" title="Tải PDF"><i class="fa-solid fa-file-pdf"></i> Tải PDF</button>
+                                </div>
+                            </div>
+                            <div id="solutionBox" class="solution-box">
+                                <div id="solutionContent"><p class="placeholder-text">Lời giải sẽ xuất hiện ở đây...</p></div>
+                            </div>
+                            <div id="loadingIndicator" class="loading hidden">
+                                <div class="spinner"></div>
+                                <p>AI đang suy nghĩ...</p>
+                            </div>
+                        </div>
+                    </div>
+                </main>
+            </div>
+        </div>
+
+        <!-- View: Admin -->
+        <div id="adminView" class="view hidden">
+            <header class="glass-panel">
+                <div class="logo">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    <span>Admin Dashboard</span>
+                </div>
+                <div class="user-info">
+                    <span class="username-display">Admin</span>
+                    <button id="logoutBtnAdmin" class="btn btn-icon" title="Đăng xuất"><i class="fa-solid fa-sign-out-alt"></i></button>
+                </div>
+            </header>
+
+            <main class="main-content">
+                <div class="admin-panel glass-panel">
+                    <h2>Quản lý người dùng</h2>
+                    <div class="table-responsive">
+                        <table id="usersTable">
+                            <thead>
+                                <tr>
+                                    <th>Tên đăng nhập</th>
+                                    <th>Ngày đăng ký</th>
+                                    <th>Đã dùng hôm nay</th>
+                                    <th>Giới hạn (ngày)</th>
+                                    <th>Hành động</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTableBody">
+                                <!-- Users will be inserted here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Thư viện Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore-compat.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <script src="js/firebase-config.js"></script>
+    <script src="js/db-firebase.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/admin.js"></script>
+    <script src="js/draw.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
